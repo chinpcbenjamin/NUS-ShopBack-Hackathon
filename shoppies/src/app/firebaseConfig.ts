@@ -31,6 +31,6 @@ export async function getUserData(username : string) {
         const response = await getDocs(query(collection(database, "users"), where("username", "==", username)))
         return response.docs[0].data()
     } catch (error) {
-        console.log("Error: ", error)
+        console.log("Error:", error)
     }
 }
