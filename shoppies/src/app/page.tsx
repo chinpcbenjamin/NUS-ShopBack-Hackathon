@@ -1,3 +1,5 @@
+"use client"
+
 import { Container, Fab } from "@mui/material";
 
 export default function Home() {
