@@ -4,20 +4,20 @@ import React, { useState } from 'react';
 import { Container, Typography, TextField, Box, Button, IconButton } from '@mui/material';
 import CloseIcon from "@mui/icons-material/Close";
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from './firebaseConfig';
-
-const randomNumberInRange = (min: number, max: number) => {
-    return Math.floor(Math.random()
-        * (max - min + 1)) + min;
-};
-
-let points = 0;
-let successfulLogin = 0;
-let questLogin = randomNumberInRange(3, 5);
-let questPurchase = randomNumberInRange(3, 5);
-let questRewards = randomNumberInRange(3, 5);
+import { auth, getUserData } from './firebaseConfig';
 
 const Home: React.FC = () => {
+  const randomNumberInRange = (min: number, max: number) => {
+    return Math.floor(Math.random()
+        * (max - min + 1)) + min;
+  };
+
+  let points = 0;
+  let successfulLogin = 0;
+  let questLogin = randomNumberInRange(3, 5);
+  let questPurchase = randomNumberInRange(3, 5);
+  let questRewards = false
+
   const [popup, setPopup] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -47,11 +47,23 @@ const Home: React.FC = () => {
     }
   }
 
+  const loadUserData = async () => {
+    const data = await getUserData()
+    if (data) {
+      points = data["points"]
+      successfulLogin = data["successful_logins"]
+      questLogin = data["quest_logins"]
+      questPurchase = data["quest_purchases"]
+      questRewards = data["quest_has_visited_rewards"]
+    }
+  }
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      loadUserData()
       successfulLogin++;
       setPopup(null); 
       handLoginQuestCompletion;
