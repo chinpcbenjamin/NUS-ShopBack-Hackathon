@@ -6,6 +6,17 @@ import CloseIcon from "@mui/icons-material/Close";
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from './firebaseConfig';
 
+const randomNumberInRange = (min: number, max: number) => {
+    return Math.floor(Math.random()
+        * (max - min + 1)) + min;
+};
+
+let points = 0;
+let successfulLogin = 0;
+let questLogin = randomNumberInRange(3, 5);
+let questPurchase = randomNumberInRange(3, 5);
+let questRewards = randomNumberInRange(3, 5);
+
 const Home: React.FC = () => {
   const [popup, setPopup] = useState<string | null>(null);
   const [email, setEmail] = useState('');
@@ -24,17 +35,26 @@ const Home: React.FC = () => {
     setPopup('login');
   };
 
-
   const handlePurchaseStreak = () => {
     window.location.href = '/streak';
   };
+
+  const handLoginQuestCompletion = () => {
+    if (successfulLogin == questLogin) {
+        points+= 10;
+        successfulLogin = 0
+        questLogin = randomNumberInRange(3, 10);
+    }
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      successfulLogin++;
       setPopup(null); 
+      handLoginQuestCompletion;
       console.log('Login successful');
     } catch (err: any) {
       console.error(err.message);
@@ -44,10 +64,14 @@ const Home: React.FC = () => {
 
   return (
     <Box className="min-h-screen flex flex-col">
-      <Box component="main" className="flex-grow bg-gray-100 py-8">
+      <Box component="main" display="flex" justifyContent="center" gap={150} className="bg-gray-100 py-8">
         <Container className="text-center">
           <Typography variant="h4" className="mb-4">Welcome to Test</Typography>
           <Typography variant="body1" color="textSecondary">This is a test website</Typography>
+        </Container>
+        <Container className="text-center">
+          <Typography variant="h4" className="mb-4">User</Typography>
+          <Typography variant="body1" color="textSecondary">{points} points</Typography>
         </Container>
       </Box>
       <Box component="header" className="bg-gray-800 text-left text-white py-4">
@@ -101,9 +125,9 @@ const Home: React.FC = () => {
           <Box className="bg-white p-6 rounded shadow-md w-96">
             <Typography variant="h6" className="mb-4">Weekly Quest</Typography>
             <ul className="list-disc list-inside space-y-2">
-              <li>Complete 3 purchases to earn 10 points (1/3)</li>
-              <li>Refer 2 friends to get 20 points (0/2)</li>
-              <li>Shop from 5 partner platforma to unlock special rewards (3/5)</li>
+              <li>10 points: Log in ({successfulLogin}/{questLogin})</li>
+              <li>20 points: Purchase items (0/{questPurchase})</li>
+              <li>30 points: Filler quest (0/{questRewards})</li>
             </ul>
             <Button 
               variant="contained" 
@@ -120,7 +144,7 @@ const Home: React.FC = () => {
            
       {popup === 'login' && (
         <Box className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <Box className="bg-white p-6 rounded shadow-md w-96 relative">
+            <Box className="bg-white p-6 rounded shadow-md w-96">
             <IconButton
                 className="absolute top-2 right-2"
                 onClick={() => setPopup(null)}
