@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { collection, addDoc, getFirestore, getDocs, query, where } from 'firebase/firestore'
+import { collection, addDoc, getFirestore, getDocs, query, where, Timestamp } from 'firebase/firestore'
 import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -23,23 +23,35 @@ export async function newUserSignUp(email : string, password : string) {
     }
 }
 
-
-export async function createUserData(username : string) {
+export async function createUserData(
+    successful_login : number, quest_login : number, successful_purchase : number,
+    quest_purchase : number, visited_rewards : boolean, quest_expiry : Timestamp, points : number
+) {
     try {
-        const response = await addDoc(collection(database, "users"), {
-            "username" : username,
+
+        const response = await addDoc(collection(database, "userData"), {
+            "username" : auth.currentUser.uid, //ignore error: user must be signed in for this function to be called
             "streak" : [],
-            "purchases" : [],
-            "missions" : []
+            
+            // quest related
+            "successful_logins": successful_login, //curr number of successful logins
+            "quest_logins" : quest_login, //number of logins needed to complete current quest
+            "successful_purchases" : successful_purchase, //curr number of successful purchases
+            "quest_purchases" : quest_purchase, //number of purchases needed to complete current quest
+            "quest_has_visited_rewards" : visited_rewards, //has the user visited rewards page
+            "quest_expiry" : quest_expiry, //time that the quest expires
+
+            "points" : points //number of points the user has from doing quests/streaks
         })
     } catch (error) {
         console.log("Error: ", error)
     }
 }
 
-export async function getUserData(username : string) {
+export async function getUserData() {
     try {
-        const response = await getDocs(query(collection(database, "users"), where("username", "==", username)))
+        //ignore error: user must be signed in for this function to be called
+        const response = await getDocs(query(collection(database, "userData"), where("username", "==", auth.currentUser.uid)))
         return response.docs[0].data()
     } catch (error) {
         console.log("Error:", error)
