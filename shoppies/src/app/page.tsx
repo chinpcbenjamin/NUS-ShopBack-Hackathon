@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Container, Typography, TextField, Box, Button, IconButton } from '@mui/material';
 import CloseIcon from "@mui/icons-material/Close";
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth, getUserData } from './firebaseConfig';
+import { auth, createUserData, getUserData, newUserSignUp, updateUserData } from './firebaseConfig';
+import { Timestamp } from 'firebase/firestore';
 
 const Home: React.FC = () => {
   const randomNumberInRange = (min: number, max: number) => {
@@ -14,14 +15,20 @@ const Home: React.FC = () => {
 
   let points = 0;
   let successfulLogin = 0;
+  let successfulPurchase = 0;
   let questLogin = randomNumberInRange(3, 5);
   let questPurchase = randomNumberInRange(3, 5);
   let questRewards = false
+  let questExpiry = new Timestamp(Timestamp.now().seconds + 7 * 24 * 60 * 60, 0)
 
   const [popup, setPopup] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    updateUserData(successfulLogin, questLogin, successfulPurchase, questPurchase, questRewards, questExpiry, points)
+  }, [successfulLogin, questLogin, successfulPurchase, questPurchase, questRewards, questExpiry, points])
 
   const handleRedeemRewards = () => {
     window.location.href = '/rewards';
@@ -52,9 +59,20 @@ const Home: React.FC = () => {
     if (data) {
       points = data["points"]
       successfulLogin = data["successful_logins"]
+      successfulPurchase = data["successful_purchases"]
       questLogin = data["quest_logins"]
       questPurchase = data["quest_purchases"]
       questRewards = data["quest_has_visited_rewards"]
+      questExpiry = data["quest_expiry"]
+    }
+  }
+
+  const handleSignUp = async () => {
+    try {
+      await newUserSignUp(email, password)
+      await createUserData(1, randomNumberInRange(3, 5), 0, randomNumberInRange(3, 5), false, new Timestamp(Timestamp.now().seconds + 7 * 24 * 60 * 60, 0), 0)
+    } catch (error) {
+      console.error(error)
     }
   }
 
@@ -82,7 +100,7 @@ const Home: React.FC = () => {
           <Typography variant="body1" color="textSecondary">This is a test website</Typography>
         </Container>
         <Container className="text-center">
-          <Typography variant="h4" className="mb-4">User</Typography>
+          <Typography variant="h4" className="mb-4">{auth.currentUser? auth.currentUser.email[0] : "User"}</Typography>
           <Typography variant="body1" color="textSecondary">{points} points</Typography>
         </Container>
       </Box>
@@ -193,6 +211,7 @@ const Home: React.FC = () => {
                     >
                         Login
                     </Button>
+                    <Button onClick={handleSignUp}>Sign Up</Button>
                 </Box>
             </form>
             {error && (
