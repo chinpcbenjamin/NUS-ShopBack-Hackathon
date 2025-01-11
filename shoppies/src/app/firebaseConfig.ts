@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { collection, addDoc, getFirestore, getDocs, query, where } from 'firebase/firestore'
-import { getAuth } from 'firebase/auth';
+import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCNs0dmj_xnh1BTd7F-31nZVH385mIYAK4",
@@ -15,7 +15,16 @@ export const app = initializeApp(firebaseConfig)
 export const database = getFirestore(app)
 export const auth = getAuth(app);
 
-export async function createUser(username : string) {
+export async function newUserSignUp(email : string, password : string) {
+    try {
+        const response = await createUserWithEmailAndPassword(auth, email, password)
+    } catch (error) {
+        console.error("Error: ", error)
+    }
+}
+
+
+export async function createUserData(username : string) {
     try {
         const response = await addDoc(collection(database, "users"), {
             "username" : username,
