@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Container, Typography, TextField, Box, Button, IconButton, Alert } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Container, Typography, TextField, Box, Button, IconButton, Alert, MenuItem, FormControl, InputLabel, Select, SelectChangeEvent } from '@mui/material';
 import CloseIcon from "@mui/icons-material/Close";
-import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
+import { browserLocalPersistence, onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, createUserData, getUserData, newUserSignUp, SignOut, updateUserData } from './firebaseConfig';
 import { Timestamp } from 'firebase/firestore';
 import { unsubscribe } from 'diagnostics_channel';
+import firebase from 'firebase/compat/app';
 
 const randomNumberInRange = (min: number, max: number) => {
   return Math.floor(Math.random()
@@ -16,10 +17,16 @@ const randomNumberInRange = (min: number, max: number) => {
 let points = 0;
 let successfulLogin = 0;
 let successfulPurchase = 0;
+let streak : number[] = []
 let questLogin = randomNumberInRange(3, 5);
 let questPurchase = randomNumberInRange(3, 5);
 let questRewards = false
 let questExpiry = new Timestamp(Timestamp.now().seconds + 7 * 24 * 60 * 60, 0)
+let travel = 0
+let fashion = 0
+let electronics = 0
+let health = 0
+let beauty = 0
 
 
 const Home: React.FC = () => {
@@ -28,6 +35,8 @@ const Home: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [signUpSuccessAlert, setSignUpSuccessAlert] = useState<boolean>(false)
+
+  const [purchaseCategory, setPurchaseCategory] = useState<string>("")
 
   const handleRedeemRewards = async () => {
     if (!questRewards) {
@@ -45,6 +54,10 @@ const Home: React.FC = () => {
     setPopup('login');
   };
 
+  const handleSimulatePurchasePress = () => {
+    setPopup('purchase')
+  }
+
   const handlePurchaseStreak = () => {
     window.location.href = '/streak';
   };
@@ -52,7 +65,8 @@ const Home: React.FC = () => {
   const handleViewRewardsPageCompletion = async () => {
     if (questRewards) {
       try {
-        await updateUserData(successfulLogin, questLogin, successfulPurchase, questPurchase, questRewards, questExpiry, points + 30)
+        await updateUserData(successfulLogin, questLogin, successfulPurchase, questPurchase, questRewards,
+          questExpiry, points + 30, streak, travel, fashion, electronics, health, beauty)
         points += 30
       } catch (error) {
         console.error(error)
@@ -63,12 +77,42 @@ const Home: React.FC = () => {
   const handleLoginQuestCompletion = async () => {
     if (successfulLogin == questLogin) {
         try {
-          await updateUserData(successfulLogin, questLogin, successfulPurchase, questPurchase, questRewards, questExpiry, points + 10)
+          await updateUserData(successfulLogin, questLogin, successfulPurchase, questPurchase, questRewards,
+            questExpiry, points + 10, streak, travel, fashion, electronics, health, beauty)
           points += 10
         } catch (error) {
           console.error(error)
         }
     }
+  }
+
+  const handleMakePurchase = async () => {
+    const day = (new Date()).getDay()
+    let prevDay = 0
+    if (day == 0) {
+      prevDay = 6
+    } else {
+      prevDay = day - 1
+    }
+    successfulPurchase += 1
+    if (streak[streak.length - 1] == prevDay) {
+      streak.push(day)
+    } else {
+      streak = []
+      streak.push(day)
+    }
+    if (purchaseCategory == "travel") {
+      travel++
+    } else if (purchaseCategory == "fashion") {
+      fashion++
+    } else if (purchaseCategory == 'electronics') {
+      electronics++
+    } else if (purchaseCategory == 'health') {
+      health++
+    } else {
+      beauty++
+    }
+    await storeToFirestore()
   }
 
   const loadUserData = async () => {
@@ -86,6 +130,12 @@ const Home: React.FC = () => {
         questPurchase = data["quest_purchases"]
         questRewards = data["quest_has_visited_rewards"]
         questExpiry = data["quest_expiry"]
+        streak = data["streak"]
+        travel = data["travel"]
+        fashion = data["fashion"]
+        electronics = data["electronics"]
+        health = data["health"]
+        beauty = data["beauty"]
       } else {
         points = data["points"]
         successfulLogin = 0
@@ -93,20 +143,27 @@ const Home: React.FC = () => {
         questLogin = randomNumberInRange(3, 5);
         questPurchase = randomNumberInRange(3, 5);
         questRewards = false
+        streak = []
         questExpiry = new Timestamp(Timestamp.now().seconds + 7 * 24 * 60 * 60, 0)
+        travel = 0,
+        fashion = 0,
+        electronics = 0,
+        health = 0,
+        beauty = 0
       }
     }
   }
 
   const storeToFirestore = async () => {
-    updateUserData(successfulLogin, questLogin, successfulPurchase, questPurchase, questRewards, questExpiry, points)
+    updateUserData(successfulLogin, questLogin, successfulPurchase, questPurchase, questRewards,
+      questExpiry, points, streak, travel, fashion, electronics, health, beauty)
   }
 
   const handleSignUp = async () => {
     try {
       const response = await newUserSignUp(email, password)
       if (response) {
-        await createUserData(1, randomNumberInRange(3, 5), 0, randomNumberInRange(3, 5), false, new Timestamp(Timestamp.now().seconds + 7 * 24 * 60 * 60, 0), 0)
+        await createUserData(1, randomNumberInRange(3, 5), 0, randomNumberInRange(3, 5), false, new Timestamp(Timestamp.now().seconds + 7 * 24 * 60 * 60, 0), 0, [], 0, 0, 0, 0, 0)
         setSignUpSuccessAlert(true)
       }
     } catch (error) {
@@ -130,6 +187,10 @@ const Home: React.FC = () => {
       console.error(err.message);
       setError('Invalid email or password. Please try again.');
     }
+  };
+
+  const handlePurchaseFormChange = (event: SelectChangeEvent) => {
+    setPurchaseCategory(event.target.value as string);
   };
 
   return (
@@ -171,10 +232,19 @@ const Home: React.FC = () => {
             <Button 
               size="small" 
               color="inherit" 
+              onClick={handleSimulatePurchasePress} 
+              className="text-sm font-medium"
+            >
+              Purchase
+            </Button>
+
+            <Button 
+              size="small" 
+              color="inherit" 
               onClick={handlePurchaseStreak} 
               className="text-sm font-medium"
             >
-              Login Streak Rewards
+              Purchase Streak
             </Button>
             <Button 
               size="small" 
@@ -188,6 +258,34 @@ const Home: React.FC = () => {
         </Container>
       </Box>
 
+      {popup == 'purchase' && (
+        <Box className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <Box className="bg-white p-6 rounded shadow-md w-400 h-100">
+            <Typography variant="h6" className="mb-4">Simulate a purchase</Typography>
+            <FormControl fullWidth>
+              <InputLabel>Purchase Category</InputLabel>
+              <Select value={purchaseCategory} onChange={handlePurchaseFormChange}>
+                <MenuItem value={"travel"}>Travel</MenuItem>
+                <MenuItem value={"fashion"}>Fashion</MenuItem>
+                <MenuItem value={"electronics"}>Electronics</MenuItem>
+                <MenuItem value={"health"}>Health</MenuItem>
+                <MenuItem value={"beauty"}>Beauty</MenuItem>
+              </Select>
+            </FormControl>
+
+            <Button onClick={handleMakePurchase}>Make Purchase</Button>
+
+            <Button 
+              variant="contained" 
+              color="error" 
+              className="mt-4"
+              onClick={() => setPopup(null)}
+            >
+              Close
+            </Button>
+          </Box>
+        </Box>
+      )}
 
       {popup === 'weeklyQuest' && (
         <Box className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
