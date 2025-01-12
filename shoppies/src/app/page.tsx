@@ -170,7 +170,7 @@ const Home: React.FC = () => {
               onClick={handlePurchaseStreak} 
               className="text-sm font-medium"
             >
-              Login Streak Rewards
+              Login Rewards
             </Button>
             <Button 
               size="small" 
