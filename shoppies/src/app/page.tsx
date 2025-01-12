@@ -266,18 +266,13 @@ const Home: React.FC = () => {
             >
               Purchase
             </Button>
-
             <Button 
               size="small" 
               color="inherit" 
               onClick={handlePurchaseStreak} 
               className="text-sm font-medium"
             >
-<<<<<<< HEAD
-              Login Rewards
-=======
-              Purchase Streak
->>>>>>> acf59d0cef47d984b640da6b1deec23ab5bea6d3
+              Daily Purchase Streak
             </Button>
             <Button 
               size="small" 
