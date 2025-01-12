@@ -9,8 +9,6 @@ import { getUserData } from '../firebaseConfig';
 const RewardsPage: React.FC = () => {
   const [popup, setPopup] = useState<string | null>(null);
   const [rewardPoints, setRewardPoints] = useState(150); 
-  const [userPreferences, setUserPreferences] = useState<any>(null); 
-  const [personalizedRewards, setPersonalizedRewards] = useState<any[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -18,31 +16,18 @@ const RewardsPage: React.FC = () => {
       const userData = await getUserData();  
       if (userData) {
         setRewardPoints(userData.points);
-        setUserPreferences(userData.preferences);  
-        generatePersonalizedRewards(userData.points, userData.preferences);
       }
     };
     loadUserData();
-  },[]);
+  }, []);
 
-  const generatePersonalizedRewards = (points: number, preferences: any) => {
-    let availableRewards = [
-      { id: 1, name: '10% Off Fashion Coupon', pointsRequired: 50, category: 'Fashion' },
-      { id: 2, name: 'Free Shipping on Electronics', pointsRequired: 100, category: 'Electronics' },
-      { id: 3, name: 'Gift Card for $25 Health Items', pointsRequired: 150, category: 'Health' },
-      { id: 4, name: 'Exclusive Access to Beauty Products', pointsRequired: 200, category: 'Beauty' },
-      { id: 5, name: 'VIP Support on Marketplace', pointsRequired: 250, category: 'Marketplace' }
-    ];
-
-    const filteredRewards = availableRewards.filter((reward) => {
-      const hasSufficientPoints = points >= reward.pointsRequired;
-      const matchesPreference = preferences.includes(reward.category);  
-
-      return hasSufficientPoints && matchesPreference;
-    });
-
-    setPersonalizedRewards(filteredRewards);
-  };
+  const availableRewards = [
+    { id: 1, name: '20% Off Next Uniqlo Purchase', pointsRequired: 50, category: 'Fashion' },
+    { id: 2, name: '$25 Gucci Gift Card', pointsRequired: 100, category: 'Fashion' },
+    { id: 3, name: 'Unlock Early Access To Upcoming Nike Collection', pointsRequired: 150, category: 'Fashion' },
+    { id: 4, name: 'Buy 1 Get 1 Free Accesories From Zara', pointsRequired: 200, category: 'Fashion' },
+    { id: 5, name: '$10 OFF Ralph Lauren Apparel', pointsRequired: 250, category: 'Fashion' }
+  ];
 
   const handleRewardRedemption = (reward: any) => {
     if (rewardPoints >= reward.pointsRequired) {
@@ -68,10 +53,10 @@ const RewardsPage: React.FC = () => {
       </Box>
 
       <Box className="flex items-center justify-center gap-4 mt-6">
-        {personalizedRewards.length === 0 ? (
+        {availableRewards.length === 0 ? (
           <Typography variant="h6">No rewards available at the moment. Keep earning points to enjoy rewards!</Typography>
         ) : (
-          personalizedRewards.map((reward) => (
+          availableRewards.map((reward) => (
             <Box key={reward.id} className="bg-white p-6 rounded shadow-md w-80">
               <Typography variant="h6" className="mb-4">{reward.name}</Typography>
               <Typography variant="body1" color="textSecondary" className="mb-4">
@@ -114,6 +99,9 @@ const RewardsPage: React.FC = () => {
 };
 
 export default RewardsPage;
+
+
+
 
 
 
