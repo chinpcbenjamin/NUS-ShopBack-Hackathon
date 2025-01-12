@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { collection, addDoc, getFirestore, getDocs, query, where, Timestamp, updateDoc } from 'firebase/firestore'
-import { createUserWithEmailAndPassword, getAuth, signOut, onAuthStateChanged, User } from 'firebase/auth';
+import { createUserWithEmailAndPassword, getAuth, signOut, onAuthStateChanged, User, browserLocalPersistence, setPersistence } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCNs0dmj_xnh1BTd7F-31nZVH385mIYAK4",
@@ -28,6 +28,7 @@ onAuthStateChanged(auth, (user) => {
 export async function newUserSignUp(email : string, password : string) {
     try {
         const response = await createUserWithEmailAndPassword(auth, email, password)
+        return response
     } catch (error) {
         console.error("Error: ", error)
     }
@@ -43,7 +44,9 @@ export async function SignOut() {
 
 export async function createUserData(
     successful_login : number, quest_login : number, successful_purchase : number,
-    quest_purchase : number, visited_rewards : boolean, quest_expiry : Timestamp, points : number
+    quest_purchase : number, visited_rewards : boolean, quest_expiry : Timestamp, points : number,
+    streak : number[], travel : number, fashion : number, electronics : number, health : number,
+    beauty : number
 ) {
     try {
         if (!currentUser) {
@@ -51,7 +54,7 @@ export async function createUserData(
         }
         const response = await addDoc(collection(database, "userData"), {
             "userEmail" : currentUser.email, //ignore error: user must be signed in for this function to be called
-            "streak" : [],
+            "streak" : streak,
             
             // quest related
             "successful_logins": successful_login, //curr number of successful logins
@@ -61,7 +64,12 @@ export async function createUserData(
             "quest_has_visited_rewards" : visited_rewards, //has the user visited rewards page
             "quest_expiry" : quest_expiry, //time that the quest expires
 
-            "points" : points //number of points the user has from doing quests/streaks
+            "points" : points, //number of points the user has from doing quests/streaks
+            "travel" : travel,
+            "fashion" : fashion,
+            "electronics" : electronics,
+            "health" : health,
+            "beauty" : beauty
         })
     } catch (error) {
         console.log("Error: ", error)
@@ -70,7 +78,9 @@ export async function createUserData(
 
 export async function updateUserData(
     successful_login : number, quest_login : number, successful_purchase : number,
-    quest_purchase : number, visited_rewards : boolean, quest_expiry : Timestamp, points : number
+    quest_purchase : number, visited_rewards : boolean, quest_expiry : Timestamp, points : number, 
+    streak : number[], travel : number, fashion : number, electronics : number, health : number,
+    beauty : number
 ) {
     try {
         if (!currentUser) {
@@ -83,7 +93,7 @@ export async function updateUserData(
         const docRef = doc.docs[0].ref
         const response = await updateDoc(docRef, {
             "userEmail" : currentUser.email, //ignore error: user must be signed in for this function to be called
-            "streak" : [],
+            "streak" : streak,
             
             // quest related
             "successful_logins": successful_login, //curr number of successful logins
@@ -93,7 +103,13 @@ export async function updateUserData(
             "quest_has_visited_rewards" : visited_rewards, //has the user visited rewards page
             "quest_expiry" : quest_expiry, //time that the quest expires
 
-            "points" : points //number of points the user has from doing quests/streaks
+            "points" : points, //number of points the user has from doing quests/streaks
+            "travel" : travel,
+            "fashion" : fashion,
+            "electronics" : electronics,
+            "health" : health,
+            "beauty" : beauty
+
         })
         console.log("Successfully updated data")
     } catch (error) {
