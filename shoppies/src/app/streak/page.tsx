@@ -7,22 +7,11 @@ import {auth} from '../firebaseConfig'
 import { onAuthStateChanged } from "firebase/auth";
 import router from "next/router";
 import Router from "next/router";
+import { useAuth } from "../AuthProvider";
 
 export default function Streak() {
+    const { user } = useAuth();
     const [streak, setStreak] = useState<number[]>([])
-    const [user, setUser] = useState(null)
-    
-    useEffect(() => {
-        // Set up the listener for auth state changes
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-          if (user) {
-            setUser(user); // If user is signed in, set user state
-          } else {
-            setUser(null); // If no user, set user to null;
-          }
-        });
-        return () => unsubscribe();
-      }, []);
 
     const setUp = async () => {
         console.log(auth.currentUser)

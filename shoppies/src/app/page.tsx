@@ -7,6 +7,7 @@ import { browserLocalPersistence, onAuthStateChanged, setPersistence, signInWith
 import { auth, createUserData, getUserData, newUserSignUp, SignOut, updateUserData } from './firebaseConfig';
 import { Timestamp } from 'firebase/firestore';
 import Router from 'next/router';
+import { useAuth } from './AuthProvider';
 
 const randomNumberInRange = (min: number, max: number) => {
   return Math.floor(Math.random()
@@ -29,6 +30,7 @@ let beauty = 0
 
 
 const Home: React.FC = () => {
+  const { user } = useAuth();
   const [popup, setPopup] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,22 +38,6 @@ const Home: React.FC = () => {
   const [signUpSuccessAlert, setSignUpSuccessAlert] = useState<boolean>(false)
 
   const [purchaseCategory, setPurchaseCategory] = useState<string>("")
-  const [user, setUser] = useState(null)
-
-  useEffect(() => {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        if (user) {
-          setUser(user); // If user is signed in, set user state
-        } else {
-          setUser(null); // If no user, set user to null;
-        }
-      });
-      console.log(user)
-
-      loadUserData()
-
-      return () => unsubscribe();
-    }, []);
 
   const handleRedeemRewards = async () => {
     if (!questRewards) {

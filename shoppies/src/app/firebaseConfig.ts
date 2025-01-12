@@ -129,3 +129,7 @@ export async function getUserData() {
         console.log("Error:", error)
     }
 }
+
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.error("Failed to set persistence:", error);
+});
