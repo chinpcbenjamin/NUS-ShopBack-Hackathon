@@ -162,7 +162,7 @@ const Home: React.FC = () => {
               onClick={handleWeeklyQuest} 
               className="text-sm font-medium"
             >
-              Weekly Quest
+              Weekly Quests
             </Button>
             <Button 
               size="small" 
@@ -170,7 +170,7 @@ const Home: React.FC = () => {
               onClick={handlePurchaseStreak} 
               className="text-sm font-medium"
             >
-              Streak Rewards
+              Login Streak Rewards
             </Button>
             <Button 
               size="small" 
@@ -188,7 +188,7 @@ const Home: React.FC = () => {
       {popup === 'weeklyQuest' && (
         <Box className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <Box className="bg-white p-6 rounded shadow-md w-96">
-            <Typography variant="h6" className="mb-4">Weekly Quest</Typography>
+            <Typography variant="h6" className="mb-4">Weekly Quests</Typography>
             <ul className="list-disc list-inside space-y-2">
               <li>10 points: Log in ({successfulLogin}/{questLogin}){successfulLogin >= questLogin ? ". Quest completed! Points have been added." : ""}</li>
               <li>20 points: Purchase items ({successfulPurchase}/{questPurchase})</li>
