@@ -72,13 +72,23 @@ const Home: React.FC = () => {
   const loadUserData = async () => {
     const data = await getUserData()
     if (data) {
-      points = data["points"]
-      successfulLogin = data["successful_logins"]
-      successfulPurchase = data["successful_purchases"]
-      questLogin = data["quest_logins"]
-      questPurchase = data["quest_purchases"]
-      questRewards = data["quest_has_visited_rewards"]
-      questExpiry = data["quest_expiry"]
+      if (Timestamp.now().valueOf() < data["quest_expiry"].valueOf()) {
+        points = data["points"]
+        successfulLogin = data["successful_logins"]
+        successfulPurchase = data["successful_purchases"]
+        questLogin = data["quest_logins"]
+        questPurchase = data["quest_purchases"]
+        questRewards = data["quest_has_visited_rewards"]
+        questExpiry = data["quest_expiry"]
+      } else {
+        points = data["points"]
+        successfulLogin = 0
+        successfulPurchase = 0
+        questLogin = randomNumberInRange(3, 5);
+        questPurchase = randomNumberInRange(3, 5);
+        questRewards = false
+        questExpiry = new Timestamp(Timestamp.now().seconds + 7 * 24 * 60 * 60, 0)
+      }
     }
   }
 
