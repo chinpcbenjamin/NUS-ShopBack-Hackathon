@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, CSSProperties } from 'react';
 import { differenceInDays, parseISO } from 'date-fns';
 
 const StreakPage: React.FC = () => {
@@ -25,8 +25,12 @@ const StreakPage: React.FC = () => {
         const difference = previousDate ? differenceInDays(today, previousDate) : Infinity;
 
         if (difference === 1) {
-            setStreak(streak + 1)
-            setDate(today)
+            if (streak >= 7) {
+                setStreak(1);
+            } else {
+                setStreak(streak + 1);
+            }
+            setDate(today);
         } else if (difference > 1) {
             setStreak(1)
             setDate(today)
@@ -39,6 +43,8 @@ const StreakPage: React.FC = () => {
         
     }
 
+    const [isHovered, setIsHovered] = useState(false);
+
     return (
         <div style={styles.container}>
             <h1 style={styles.heading}>Streak Tracker</h1>
@@ -50,7 +56,15 @@ const StreakPage: React.FC = () => {
                     <strong>Last Login:</strong>{' '}
                     {date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
-                <button style={styles.button} onClick={buy}>
+                <button
+                    style={{
+                        ...styles.button,
+                        backgroundColor: isHovered ? '#45a049' : '#4caf50', // Change color on hover
+                    }}
+                    onMouseEnter={() => setIsHovered(true)} 
+                    onMouseLeave={() => setIsHovered(false)} 
+                    onClick={buy}
+                >
                     Make Purchase!
                 </button>
             </div>
@@ -58,7 +72,7 @@ const StreakPage: React.FC = () => {
     );
 }
 
-const styles = {
+const styles: { [key: string]: CSSProperties } = {
     container: {
         display: 'flex',
         flexDirection: 'column',
@@ -99,10 +113,6 @@ const styles = {
         cursor: 'pointer',
         transition: 'background-color 0.3s ease',
     },
-};
-
-styles.button[':hover'] = {
-    backgroundColor: '#45a049',
 };
 
 export default StreakPage;
