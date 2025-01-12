@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import { Container, Typography, TextField, Box, Button, IconButton } from '@mui/material';
 import CloseIcon from "@mui/icons-material/Close";
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, createUserData, getUserData, newUserSignUp, SignOut, updateUserData } from './firebaseConfig';
 import { Timestamp } from 'firebase/firestore';
+import { unsubscribe } from 'diagnostics_channel';
 
 const randomNumberInRange = (min: number, max: number) => {
   return Math.floor(Math.random()
@@ -70,6 +71,10 @@ const Home: React.FC = () => {
   }
 
   const loadUserData = async () => {
+    if (!auth.currentUser) {
+        console.error("No user signed in");
+        return;
+    }
     const data = await getUserData()
     if (data) {
       if (Timestamp.now().valueOf() < data["quest_expiry"].valueOf()) {
@@ -131,7 +136,7 @@ const Home: React.FC = () => {
           <Typography variant="body1" color="textSecondary">This is a test website</Typography>
         </Container>
         <Container className="text-center">
-          <Typography variant="h4" className="mb-4">{auth.currentUser? auth.currentUser.email[0].toUpperCase() : "User"}</Typography>
+          <Typography variant="h4" className="mb-4">{auth.currentUser? auth.currentUser?.email[0].toUpperCase() : "User"}</Typography>
           <Typography variant="body1" color="textSecondary">{points} points</Typography>
         </Container>
       </Box>

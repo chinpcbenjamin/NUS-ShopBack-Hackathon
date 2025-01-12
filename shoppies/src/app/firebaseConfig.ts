@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { collection, addDoc, getFirestore, getDocs, query, where, Timestamp, updateDoc } from 'firebase/firestore'
-import { createUserWithEmailAndPassword, getAuth, signOut } from 'firebase/auth';
+import { createUserWithEmailAndPassword, getAuth, signOut, onAuthStateChanged, User } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCNs0dmj_xnh1BTd7F-31nZVH385mIYAK4",
@@ -14,6 +14,16 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig)
 export const database = getFirestore(app)
 export const auth = getAuth(app);
+
+let currentUser: User | null = null;
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    currentUser = user;
+  } else {
+    currentUser = null;
+  }
+});
 
 export async function newUserSignUp(email : string, password : string) {
     try {
@@ -36,9 +46,11 @@ export async function createUserData(
     quest_purchase : number, visited_rewards : boolean, quest_expiry : Timestamp, points : number
 ) {
     try {
-
+        if (!currentUser) {
+          throw new Error("No user signed in");
+        }
         const response = await addDoc(collection(database, "userData"), {
-            "userEmail" : auth.currentUser?.email, //ignore error: user must be signed in for this function to be called
+            "userEmail" : currentUser.email, //ignore error: user must be signed in for this function to be called
             "streak" : [],
             
             // quest related
@@ -61,10 +73,16 @@ export async function updateUserData(
     quest_purchase : number, visited_rewards : boolean, quest_expiry : Timestamp, points : number
 ) {
     try {
-        const doc = await getDocs(query(collection(database, "userData"), where("userEmail", "==", auth.currentUser.email)))
+        if (!currentUser) {
+          throw new Error("No user signed in");
+        }
+        const doc = await getDocs(query(collection(database, "userData"), where("userEmail", "==", currentUser.email)))
+        if (doc.empty) {
+          throw new Error("No user data found");
+        }
         const docRef = doc.docs[0].ref
         const response = await updateDoc(docRef, {
-            "userEmail" : auth.currentUser.email, //ignore error: user must be signed in for this function to be called
+            "userEmail" : currentUser.email, //ignore error: user must be signed in for this function to be called
             "streak" : [],
             
             // quest related
@@ -86,7 +104,10 @@ export async function updateUserData(
 export async function getUserData() {
     try {
         //ignore error: user must be signed in for this function to be called
-        const response = await getDocs(query(collection(database, "userData"), where("userEmail", "==", auth.currentUser.email)))
+        if (!currentUser) {
+          throw new Error("No user signed in");
+        }
+        const response = await getDocs(query(collection(database, "userData"), where("userEmail", "==", currentUser.email)))
         return response.docs[0].data()
     } catch (error) {
         console.log("Error:", error)
