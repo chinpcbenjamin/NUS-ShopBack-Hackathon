@@ -28,6 +28,7 @@ onAuthStateChanged(auth, (user) => {
 export async function newUserSignUp(email : string, password : string) {
     try {
         const response = await createUserWithEmailAndPassword(auth, email, password)
+        return response
     } catch (error) {
         console.error("Error: ", error)
     }
