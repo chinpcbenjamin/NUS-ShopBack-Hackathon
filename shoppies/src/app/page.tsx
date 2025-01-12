@@ -3,11 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, TextField, Box, Button, IconButton, Alert, MenuItem, FormControl, InputLabel, Select, SelectChangeEvent } from '@mui/material';
 import CloseIcon from "@mui/icons-material/Close";
-import { browserLocalPersistence, onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
+import { browserLocalPersistence, onAuthStateChanged, setPersistence, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, createUserData, getUserData, newUserSignUp, SignOut, updateUserData } from './firebaseConfig';
 import { Timestamp } from 'firebase/firestore';
-import { unsubscribe } from 'diagnostics_channel';
-import firebase from 'firebase/compat/app';
+import Router from 'next/router';
 
 const randomNumberInRange = (min: number, max: number) => {
   return Math.floor(Math.random()
@@ -37,6 +36,22 @@ const Home: React.FC = () => {
   const [signUpSuccessAlert, setSignUpSuccessAlert] = useState<boolean>(false)
 
   const [purchaseCategory, setPurchaseCategory] = useState<string>("")
+  const [user, setUser] = useState(null)
+
+  useEffect(() => {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user) {
+          setUser(user); // If user is signed in, set user state
+        } else {
+          setUser(null); // If no user, set user to null;
+        }
+      });
+      console.log(user)
+
+      loadUserData()
+
+      return () => unsubscribe();
+    }, []);
 
   const handleRedeemRewards = async () => {
     if (!questRewards) {
@@ -45,6 +60,14 @@ const Home: React.FC = () => {
     }
     window.location.href = '/rewards';
   };
+
+  const handleRedeemPurchases = async () => {
+    if (successfulPurchase == questPurchase) {
+      await updateUserData(successfulLogin, questLogin, successfulPurchase, questPurchase, questRewards,
+        questExpiry, points + 20, streak, travel, fashion, electronics, health, beauty)
+      points += 20
+    }
+  }
 
   const handleWeeklyQuest = () => {
     setPopup('weeklyQuest');
@@ -113,6 +136,7 @@ const Home: React.FC = () => {
       beauty++
     }
     await storeToFirestore()
+    await handleRedeemPurchases()
   }
 
   const loadUserData = async () => {
@@ -293,8 +317,8 @@ const Home: React.FC = () => {
             <Typography variant="h6" className="mb-4">Weekly Quests</Typography>
             <ul className="list-disc list-inside space-y-2">
               <li>10 points: Log in ({successfulLogin}/{questLogin}){successfulLogin >= questLogin ? ". Quest completed! Points have been added." : ""}</li>
-              <li>20 points: Purchase items ({successfulPurchase}/{questPurchase})</li>
-              <li>30 points: Visited 'Rewards' Page? ({questRewards ? "1/1. Quest completed! Points have been added." : "0/1"})</li>
+              <li>20 points: Purchase items ({successfulPurchase}/{questPurchase}){successfulPurchase >= questPurchase ? ". Quest completed! Points have been added." : ""}</li>
+              <li>30 points: Visited 'Rewards' Page? ({questRewards ? "1/1). Quest completed! Points have been added." : "0/1)"}</li>
             </ul>
             <Button 
               variant="contained" 
