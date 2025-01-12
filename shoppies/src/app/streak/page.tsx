@@ -4,9 +4,9 @@ import React, { useEffect, useState, CSSProperties } from 'react';
 import { differenceInDays, parseISO } from 'date-fns';
 
 const StreakPage: React.FC = () => {
-    const [streak, setStreak] = useState<number>(() => {
-        const storedStreak = localStorage.getItem('streak');
-        return storedStreak ? parseInt(storedStreak, 10) : 0;
+    const [streakData, setStreakData] = useState<{streak : number; date : string}[]>(() => {
+        const storedData = localStorage.getItem('streakData');
+        return storedData ? JSON.parse(storedData) : [];
     });
     const [date, setDate] = useState<Date>(() => {
         const storedDate = localStorage.getItem('date');
@@ -14,31 +14,24 @@ const StreakPage: React.FC = () => {
     });
 
     useEffect (() => {
-        localStorage.setItem('streak', streak.toString());
-        localStorage.setItem('date', date.toISOString());
-    }, [streak, date]);
+        localStorage.setItem('streakData', JSON.stringify(streakData));
+    }, [streakData]);
     
     function buy() {
         const today = new Date();
-        const storedDate = localStorage.getItem('date');
-        const previousDate = storedDate ? new Date(storedDate) : null;
+        const lastEntry = streakData[streakData.length - 1];
+        const previousDate = lastEntry ? new Date(lastEntry.date) : null;
         const difference = previousDate ? differenceInDays(today, previousDate) : Infinity;
 
         if (difference === 1) {
-            if (streak >= 7) {
-                setStreak(1);
-            } else {
-                setStreak(streak + 1);
-            }
-            setDate(today);
+            const newStreak = lastEntry.streak >= 7 ? 1 : lastEntry.streak + 1;
+            setStreakData([...streakData, { streak: newStreak, date: today.toISOString()}]);
         } else if (difference > 1) {
-            setStreak(1)
-            setDate(today)
+            setStreakData([...streakData, { streak: 1, date: today.toISOString()}]);
         } else if (difference === 0) {
-            if (streak === 0) {
-                setStreak(1)
+            if (!lastEntry || lastEntry.streak === 0) {
+                setStreakData([...streakData, { streak: 1, date: today.toISOString()}]);
             }
-            setDate(today)
         }
         
     }
@@ -50,16 +43,23 @@ const StreakPage: React.FC = () => {
             <h1 style={styles.heading}>Streak Tracker</h1>
             <div style={styles.card}>
                 <p style={styles.text}>
-                    <strong>Current Streak:</strong> {streak} day{streak !== 1 ? 's' : ''}
+                    <strong>Current Streak:</strong> {streakData.length ? streakData[streakData.length - 1].streak : 0} day
                 </p>
                 <p style={styles.text}>
-                    <strong>Last Login:</strong>{' '}
-                    {date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                </p>
+    <strong>Last Login:</strong>{' '}
+    {streakData.length
+        ? new Date(streakData[streakData.length - 1].date).toLocaleDateString(undefined, {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+          })
+        : 'No data'}
+</p>
                 <button
                     style={{
                         ...styles.button,
-                        backgroundColor: isHovered ? '#45a049' : '#4caf50', // Change color on hover
+                        backgroundColor: isHovered ? '#45a049' : '#4caf50',
                     }}
                     onMouseEnter={() => setIsHovered(true)} 
                     onMouseLeave={() => setIsHovered(false)} 
