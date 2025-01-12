@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Container, Typography, TextField, Box, Button, IconButton } from '@mui/material';
 import CloseIcon from "@mui/icons-material/Close";
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -27,10 +27,6 @@ const Home: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    updateUserData(successfulLogin, questLogin, successfulPurchase, questPurchase, questRewards, questExpiry, points)
-  }, [successfulLogin, questLogin, successfulPurchase, questPurchase, questRewards, questExpiry, points])
-
   const handleRedeemRewards = () => {
     window.location.href = '/rewards';
   };
@@ -47,11 +43,14 @@ const Home: React.FC = () => {
     window.location.href = '/streak';
   };
 
-  const handLoginQuestCompletion = () => {
+  const handleLoginQuestCompletion = async () => {
     if (successfulLogin == questLogin) {
-        points+= 10;
-        successfulLogin = 0
-        questLogin = randomNumberInRange(3, 10);
+        try {
+          await updateUserData(successfulLogin, questLogin, successfulPurchase, questPurchase, questRewards, questExpiry, points + 10)
+          points += 10
+        } catch (error) {
+          console.error(error)
+        }
     }
   }
 
@@ -68,6 +67,10 @@ const Home: React.FC = () => {
     }
   }
 
+  const storeToFirestore = async () => {
+    updateUserData(successfulLogin, questLogin, successfulPurchase, questPurchase, questRewards, questExpiry, points)
+  }
+
   const handleSignUp = async () => {
     try {
       await newUserSignUp(email, password)
@@ -82,11 +85,13 @@ const Home: React.FC = () => {
     setError(null);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      loadUserData()
+      await loadUserData()
       successfulLogin++;
-      setPopup(null); 
-      handLoginQuestCompletion;
-      console.log('Login successful');
+      await storeToFirestore()
+      setPopup(null);
+      await handleLoginQuestCompletion();
+      await storeToFirestore()
+      console.log("Successful login")
     } catch (err: any) {
       console.error(err.message);
       setError('Invalid email or password. Please try again.');
@@ -101,7 +106,7 @@ const Home: React.FC = () => {
           <Typography variant="body1" color="textSecondary">This is a test website</Typography>
         </Container>
         <Container className="text-center">
-          <Typography variant="h4" className="mb-4">{auth.currentUser? auth.currentUser.email[0] : "User"}</Typography>
+          <Typography variant="h4" className="mb-4">{auth.currentUser? auth.currentUser.email[0].toUpperCase() : "User"}</Typography>
           <Typography variant="body1" color="textSecondary">{points} points</Typography>
         </Container>
       </Box>
@@ -155,7 +160,7 @@ const Home: React.FC = () => {
           <Box className="bg-white p-6 rounded shadow-md w-96">
             <Typography variant="h6" className="mb-4">Weekly Quest</Typography>
             <ul className="list-disc list-inside space-y-2">
-              <li>10 points: Log in ({successfulLogin}/{questLogin})</li>
+              <li>10 points: Log in ({successfulLogin}/{questLogin}){successfulLogin >= questLogin ? ". Quest completed! Points have been added." : ""}</li>
               <li>20 points: Purchase items (0/{questPurchase})</li>
               <li>30 points: Visited 'Rewards' Page? ({questRewards ? "1/1 " : "0/1"})</li>
             </ul>

@@ -77,6 +77,7 @@ export async function updateUserData(
 
             "points" : points //number of points the user has from doing quests/streaks
         })
+        console.log("Successfully updated data")
     } catch (error) {
         console.log("Error: ", error)
     }
