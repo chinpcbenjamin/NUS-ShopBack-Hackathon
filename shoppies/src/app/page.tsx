@@ -120,6 +120,8 @@ const Home: React.FC = () => {
     successfulPurchase += 1
     if (streak[streak.length - 1] == prevDay) {
       streak.push(day)
+    } else if (streak[streak.length - 1] == day) {
+      console.log("same day")
     } else {
       streak = []
       streak.push(day)
