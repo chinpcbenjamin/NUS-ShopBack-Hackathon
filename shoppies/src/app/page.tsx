@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Container, Typography, TextField, Box, Button, IconButton } from '@mui/material';
+import { Container, Typography, TextField, Box, Button, IconButton, Alert } from '@mui/material';
 import CloseIcon from "@mui/icons-material/Close";
 import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, createUserData, getUserData, newUserSignUp, SignOut, updateUserData } from './firebaseConfig';
@@ -27,6 +27,7 @@ const Home: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [signUpSuccessAlert, setSignUpSuccessAlert] = useState<boolean>(false)
 
   const handleRedeemRewards = async () => {
     if (!questRewards) {
@@ -103,8 +104,11 @@ const Home: React.FC = () => {
 
   const handleSignUp = async () => {
     try {
-      await newUserSignUp(email, password)
-      await createUserData(1, randomNumberInRange(3, 5), 0, randomNumberInRange(3, 5), false, new Timestamp(Timestamp.now().seconds + 7 * 24 * 60 * 60, 0), 0)
+      const response = await newUserSignUp(email, password)
+      if (response) {
+        await createUserData(1, randomNumberInRange(3, 5), 0, randomNumberInRange(3, 5), false, new Timestamp(Timestamp.now().seconds + 7 * 24 * 60 * 60, 0), 0)
+        setSignUpSuccessAlert(true)
+      }
     } catch (error) {
       console.error(error)
     }
@@ -219,6 +223,11 @@ const Home: React.FC = () => {
             <Typography variant="h6" align= "center" className="mb-4">
                 Login
             </Typography>
+            {
+              signUpSuccessAlert && <Alert severity='success' onClose={() => setSignUpSuccessAlert(false)}>
+                Successfully signed up!. Please press the 'Login' Button
+              </Alert>
+            }
             <form onSubmit={handleLogin}>
                 <Box display="flex" 
                      flexDirection="column"
