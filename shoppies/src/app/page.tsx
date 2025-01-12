@@ -27,7 +27,11 @@ const Home: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const handleRedeemRewards = () => {
+  const handleRedeemRewards = async () => {
+    if (!questRewards) {
+      questRewards = true
+      await handleViewRewardsPageCompletion()
+    }
     window.location.href = '/rewards';
   };
 
@@ -42,6 +46,17 @@ const Home: React.FC = () => {
   const handlePurchaseStreak = () => {
     window.location.href = '/streak';
   };
+
+  const handleViewRewardsPageCompletion = async () => {
+    if (questRewards) {
+      try {
+        await updateUserData(successfulLogin, questLogin, successfulPurchase, questPurchase, questRewards, questExpiry, points + 30)
+        points += 30
+      } catch (error) {
+        console.error(error)
+      }
+    }
+  }
 
   const handleLoginQuestCompletion = async () => {
     if (successfulLogin == questLogin) {
@@ -161,8 +176,8 @@ const Home: React.FC = () => {
             <Typography variant="h6" className="mb-4">Weekly Quest</Typography>
             <ul className="list-disc list-inside space-y-2">
               <li>10 points: Log in ({successfulLogin}/{questLogin}){successfulLogin >= questLogin ? ". Quest completed! Points have been added." : ""}</li>
-              <li>20 points: Purchase items (0/{questPurchase})</li>
-              <li>30 points: Visited 'Rewards' Page? ({questRewards ? "1/1 " : "0/1"})</li>
+              <li>20 points: Purchase items ({successfulPurchase}/{questPurchase})</li>
+              <li>30 points: Visited 'Rewards' Page? ({questRewards ? "1/1. Quest completed! Points have been added." : "0/1"})</li>
             </ul>
             <Button 
               variant="contained" 
