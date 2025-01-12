@@ -4,23 +4,24 @@ import React, { useEffect, useState } from 'react';
 import { Container, Typography, TextField, Box, Button, IconButton } from '@mui/material';
 import CloseIcon from "@mui/icons-material/Close";
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth, createUserData, getUserData, newUserSignUp, updateUserData } from './firebaseConfig';
+import { auth, createUserData, getUserData, newUserSignUp, SignOut, updateUserData } from './firebaseConfig';
 import { Timestamp } from 'firebase/firestore';
 
+const randomNumberInRange = (min: number, max: number) => {
+  return Math.floor(Math.random()
+      * (max - min + 1)) + min;
+};
+
+let points = 0;
+let successfulLogin = 0;
+let successfulPurchase = 0;
+let questLogin = randomNumberInRange(3, 5);
+let questPurchase = randomNumberInRange(3, 5);
+let questRewards = false
+let questExpiry = new Timestamp(Timestamp.now().seconds + 7 * 24 * 60 * 60, 0)
+
+
 const Home: React.FC = () => {
-  const randomNumberInRange = (min: number, max: number) => {
-    return Math.floor(Math.random()
-        * (max - min + 1)) + min;
-  };
-
-  let points = 0;
-  let successfulLogin = 0;
-  let successfulPurchase = 0;
-  let questLogin = randomNumberInRange(3, 5);
-  let questPurchase = randomNumberInRange(3, 5);
-  let questRewards = false
-  let questExpiry = new Timestamp(Timestamp.now().seconds + 7 * 24 * 60 * 60, 0)
-
   const [popup, setPopup] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -149,7 +150,6 @@ const Home: React.FC = () => {
       </Box>
 
 
-
       {popup === 'weeklyQuest' && (
         <Box className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <Box className="bg-white p-6 rounded shadow-md w-96">
@@ -157,7 +157,7 @@ const Home: React.FC = () => {
             <ul className="list-disc list-inside space-y-2">
               <li>10 points: Log in ({successfulLogin}/{questLogin})</li>
               <li>20 points: Purchase items (0/{questPurchase})</li>
-              <li>30 points: Filler quest (0/{questRewards})</li>
+              <li>30 points: Visited 'Rewards' Page? ({questRewards ? "1/1 " : "0/1"})</li>
             </ul>
             <Button 
               variant="contained" 
@@ -212,6 +212,7 @@ const Home: React.FC = () => {
                         Login
                     </Button>
                     <Button onClick={handleSignUp}>Sign Up</Button>
+                    <Button onClick={SignOut}>Sign Out</Button>
                 </Box>
             </form>
             {error && (
