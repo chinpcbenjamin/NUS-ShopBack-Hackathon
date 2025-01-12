@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { collection, addDoc, getFirestore, getDocs, query, where, Timestamp, updateDoc } from 'firebase/firestore'
-import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
+import { createUserWithEmailAndPassword, getAuth, signOut } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCNs0dmj_xnh1BTd7F-31nZVH385mIYAK4",
@@ -18,6 +18,14 @@ export const auth = getAuth(app);
 export async function newUserSignUp(email : string, password : string) {
     try {
         const response = await createUserWithEmailAndPassword(auth, email, password)
+    } catch (error) {
+        console.error("Error: ", error)
+    }
+}
+
+export async function SignOut() {
+    try {
+        const response = await signOut(auth)
     } catch (error) {
         console.error("Error: ", error)
     }
@@ -69,6 +77,7 @@ export async function updateUserData(
 
             "points" : points //number of points the user has from doing quests/streaks
         })
+        console.log("Successfully updated data")
     } catch (error) {
         console.log("Error: ", error)
     }

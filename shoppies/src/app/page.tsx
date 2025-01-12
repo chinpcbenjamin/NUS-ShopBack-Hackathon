@@ -1,36 +1,37 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Container, Typography, TextField, Box, Button, IconButton } from '@mui/material';
 import CloseIcon from "@mui/icons-material/Close";
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth, createUserData, getUserData, newUserSignUp, updateUserData } from './firebaseConfig';
+import { auth, createUserData, getUserData, newUserSignUp, SignOut, updateUserData } from './firebaseConfig';
 import { Timestamp } from 'firebase/firestore';
 
+const randomNumberInRange = (min: number, max: number) => {
+  return Math.floor(Math.random()
+      * (max - min + 1)) + min;
+};
+
+let points = 0;
+let successfulLogin = 0;
+let successfulPurchase = 0;
+let questLogin = randomNumberInRange(3, 5);
+let questPurchase = randomNumberInRange(3, 5);
+let questRewards = false
+let questExpiry = new Timestamp(Timestamp.now().seconds + 7 * 24 * 60 * 60, 0)
+
+
 const Home: React.FC = () => {
-  const randomNumberInRange = (min: number, max: number) => {
-    return Math.floor(Math.random()
-        * (max - min + 1)) + min;
-  };
-
-  let points = 0;
-  let successfulLogin = 0;
-  let successfulPurchase = 0;
-  let questLogin = randomNumberInRange(3, 5);
-  let questPurchase = randomNumberInRange(3, 5);
-  let questRewards = false
-  let questExpiry = new Timestamp(Timestamp.now().seconds + 7 * 24 * 60 * 60, 0)
-
   const [popup, setPopup] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    updateUserData(successfulLogin, questLogin, successfulPurchase, questPurchase, questRewards, questExpiry, points)
-  }, [successfulLogin, questLogin, successfulPurchase, questPurchase, questRewards, questExpiry, points])
-
-  const handleRedeemRewards = () => {
+  const handleRedeemRewards = async () => {
+    if (!questRewards) {
+      questRewards = true
+      await handleViewRewardsPageCompletion()
+    }
     window.location.href = '/rewards';
   };
 
@@ -46,25 +47,53 @@ const Home: React.FC = () => {
     window.location.href = '/streak';
   };
 
-  const handLoginQuestCompletion = () => {
+  const handleViewRewardsPageCompletion = async () => {
+    if (questRewards) {
+      try {
+        await updateUserData(successfulLogin, questLogin, successfulPurchase, questPurchase, questRewards, questExpiry, points + 30)
+        points += 30
+      } catch (error) {
+        console.error(error)
+      }
+    }
+  }
+
+  const handleLoginQuestCompletion = async () => {
     if (successfulLogin == questLogin) {
-        points+= 10;
-        successfulLogin = 0
-        questLogin = randomNumberInRange(3, 10);
+        try {
+          await updateUserData(successfulLogin, questLogin, successfulPurchase, questPurchase, questRewards, questExpiry, points + 10)
+          points += 10
+        } catch (error) {
+          console.error(error)
+        }
     }
   }
 
   const loadUserData = async () => {
     const data = await getUserData()
     if (data) {
-      points = data["points"]
-      successfulLogin = data["successful_logins"]
-      successfulPurchase = data["successful_purchases"]
-      questLogin = data["quest_logins"]
-      questPurchase = data["quest_purchases"]
-      questRewards = data["quest_has_visited_rewards"]
-      questExpiry = data["quest_expiry"]
+      if (Timestamp.now().valueOf() < data["quest_expiry"].valueOf()) {
+        points = data["points"]
+        successfulLogin = data["successful_logins"]
+        successfulPurchase = data["successful_purchases"]
+        questLogin = data["quest_logins"]
+        questPurchase = data["quest_purchases"]
+        questRewards = data["quest_has_visited_rewards"]
+        questExpiry = data["quest_expiry"]
+      } else {
+        points = data["points"]
+        successfulLogin = 0
+        successfulPurchase = 0
+        questLogin = randomNumberInRange(3, 5);
+        questPurchase = randomNumberInRange(3, 5);
+        questRewards = false
+        questExpiry = new Timestamp(Timestamp.now().seconds + 7 * 24 * 60 * 60, 0)
+      }
     }
+  }
+
+  const storeToFirestore = async () => {
+    updateUserData(successfulLogin, questLogin, successfulPurchase, questPurchase, questRewards, questExpiry, points)
   }
 
   const handleSignUp = async () => {
@@ -81,11 +110,13 @@ const Home: React.FC = () => {
     setError(null);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      loadUserData()
+      await loadUserData()
       successfulLogin++;
-      setPopup(null); 
-      handLoginQuestCompletion;
-      console.log('Login successful');
+      await storeToFirestore()
+      setPopup(null);
+      await handleLoginQuestCompletion();
+      await storeToFirestore()
+      console.log("Successful login")
     } catch (err: any) {
       console.error(err.message);
       setError('Invalid email or password. Please try again.');
@@ -100,7 +131,7 @@ const Home: React.FC = () => {
           <Typography variant="body1" color="textSecondary">This is a test website</Typography>
         </Container>
         <Container className="text-center">
-          <Typography variant="h4" className="mb-4">{auth.currentUser? auth.currentUser.email[0] : "User"}</Typography>
+          <Typography variant="h4" className="mb-4">{auth.currentUser? auth.currentUser.email[0].toUpperCase() : "User"}</Typography>
           <Typography variant="body1" color="textSecondary">{points} points</Typography>
         </Container>
       </Box>
@@ -149,15 +180,14 @@ const Home: React.FC = () => {
       </Box>
 
 
-
       {popup === 'weeklyQuest' && (
         <Box className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <Box className="bg-white p-6 rounded shadow-md w-96">
             <Typography variant="h6" className="mb-4">Weekly Quest</Typography>
             <ul className="list-disc list-inside space-y-2">
-              <li>10 points: Log in ({successfulLogin}/{questLogin})</li>
-              <li>20 points: Purchase items (0/{questPurchase})</li>
-              <li>30 points: Filler quest (0/{questRewards})</li>
+              <li>10 points: Log in ({successfulLogin}/{questLogin}){successfulLogin >= questLogin ? ". Quest completed! Points have been added." : ""}</li>
+              <li>20 points: Purchase items ({successfulPurchase}/{questPurchase})</li>
+              <li>30 points: Visited 'Rewards' Page? ({questRewards ? "1/1. Quest completed! Points have been added." : "0/1"})</li>
             </ul>
             <Button 
               variant="contained" 
@@ -212,6 +242,7 @@ const Home: React.FC = () => {
                         Login
                     </Button>
                     <Button onClick={handleSignUp}>Sign Up</Button>
+                    <Button onClick={SignOut}>Sign Out</Button>
                 </Box>
             </form>
             {error && (
